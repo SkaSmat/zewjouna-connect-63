@@ -6,8 +6,14 @@
 --
 -- À coller dans le SQL Editor du dashboard Supabase, APRÈS la migration.
 -- Ré-exécutable sans risque (idempotent via ON CONFLICT).
+--
+-- NB : on utilise une table de travail normale (et non TEMPORARY) car le SQL
+-- Editor de Supabase exécute les instructions dans des sessions distinctes —
+-- une table temporaire n'y survivrait pas d'une instruction à l'autre.
 
-create temporary table _seed_people (
+drop table if exists public._zew_seed;
+
+create table public._zew_seed (
   id          uuid,
   email       text,
   display_name text,
@@ -20,7 +26,7 @@ create temporary table _seed_people (
   bio         text
 );
 
-insert into _seed_people values
+insert into public._zew_seed values
   ('a0000000-0000-4000-8000-000000000001','yasmine.test@zewjouna.app','Yasmine','female','male',28, 2.3522,48.8566, array['Kabylie','Français','Cuisine'],            'Kabyle de Paris, je cuisine mieux que ta mère (presque).'),
   ('a0000000-0000-4000-8000-000000000002','karim.test@zewjouna.app','Karim','male','female',31, 2.3490,48.8600, array['Oranais','Arabe','Sport'],                 'Oranais, fan de foot et de bons couscous du dimanche.'),
   ('a0000000-0000-4000-8000-000000000003','lina.test@zewjouna.app','Lina','female','everyone',26, 4.8357,45.7640, array['Algérois','Français','Voyages'],          'Lyonnaise dans l’âme, alger­oise de cœur. Toujours partante pour un voyage.'),
@@ -45,7 +51,7 @@ select
   p.email, crypt('zewjouna123', gen_salt('bf')),
   now(), now(), now(),
   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-from _seed_people p
+from public._zew_seed p
 on conflict (id) do nothing;
 
 -- Identités e-mail (nécessaires pour la connexion par e-mail).
@@ -56,7 +62,7 @@ select
   p.id::text, p.id,
   jsonb_build_object('sub', p.id::text, 'email', p.email, 'email_verified', true),
   'email', now(), now(), now()
-from _seed_people p
+from public._zew_seed p
 on conflict (provider, provider_id) do nothing;
 
 -- 2) Profils publics géolocalisés.
@@ -71,7 +77,7 @@ select
   st_setsrid(st_makepoint(p.lng, p.lat), 4326)::geography,
   now() - (random() * interval '5 days'),
   (random() < 0.4)
-from _seed_people p
+from public._zew_seed p
 on conflict (user_id) do update set
   display_name   = excluded.display_name,
   bio            = excluded.bio,
@@ -81,4 +87,4 @@ on conflict (user_id) do update set
   community_tags = excluded.community_tags,
   location       = excluded.location;
 
-drop table _seed_people;
+drop table public._zew_seed;

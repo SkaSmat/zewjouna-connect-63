@@ -1,0 +1,18 @@
+# Supabase project configuration for ZEWJOUNA.
+# Link with:  supabase link --project-ref rpolxheihjmhrpqbmpsq
+project_id = "rpolxheihjmhrpqbmpsq"
+
+[db]
+major_version = 15
+
+[auth]
+# Email/password onboarding. Add OAuth providers here when needed.
+enable_signup = true
+
+[storage]
+enabled = true
+
+# The signed-photo-urls function runs authenticated callers only; it verifies
+# the JWT itself and uses the service-role key to sign private photos.
+[functions.signed-photo-urls]
+verify_jwt = true
